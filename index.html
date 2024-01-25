@@ -1,0 +1,98 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Crystal Graphics Engine</title>
+    <script src="crystallib.js"></script>
+</head>
+
+<body>
+    <canvas width="800" height="800" id="canvas"></canvas>
+
+    <script>
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+
+        function RNG(seed) {
+        // LCG using GCC's constants
+        this.m = 0x80000000; // 2**31;
+        this.a = 1103515245;
+        this.c = 12345;
+
+        this.state = seed ? seed : Math.floor(Math.random() * (this.m - 1));
+        }
+        RNG.prototype.nextInt = function() {
+        this.state = (this.a * this.state + this.c) % this.m;
+        return this.state;
+        }
+        RNG.prototype.nextFloat = function() {
+        // returns in range [0,1]
+        return this.nextInt() / (this.m - 1);
+        }
+        RNG.prototype.nextRange = function(start, end) {
+        // returns in range [start, end): including start, excluding end
+        // can't modulu nextInt because of weak randomness in lower bits
+        var rangeSize = end - start;
+        var randomUnder1 = this.nextInt() / this.m;
+        return start + Math.floor(randomUnder1 * rangeSize);
+        }
+        RNG.prototype.choice = function(array) {
+        return array[this.nextRange(0, array.length)];
+        }
+
+        
+        set_resolution(canvas.width, canvas.height);
+        init_2d_canvas();
+
+
+        let mousex, mousey;
+        document.addEventListener("mousemove", e => {
+            mousex = e.x;
+            mousey = e.y;
+        });
+        draw_rect(100, 100, 100, 100, (light) => {
+            light.tmp_lum = 0;
+        });
+        // const diff_strength = 0.7;
+        // draw_rect(100, 300, 100, 100, (light) => {
+        //     let rng = new RNG(light.tmp_x + light.tmp_y);
+        //     light.dir_x += ((rng.nextFloat() * 2) - 1) * diff_strength;
+        //     if(light.dir_x > 1) light.dir_x = 1;
+        //     if(light.dir_x < -1) light.dir_x = -1;
+
+        //     light.dir_y += ((rng.nextFloat() * 2) - 1) * diff_strength;
+        //     if(light.dir_y > 1) light.dir_y = 1;
+        //     if(light.dir_y < -1) light.dir_y = -1;
+
+        //     light.tmp_lum -= 0.062;
+        // });
+        draw_rect(200, 300, 100, 200, (light) => {
+            light.tmp_lum -= 0.062;
+        });
+        // draw_rect(300, 400, 100, 100, (light) => {
+        //     light.tmp_x -= light.dir_x;
+        //     light.tmp_y -= light.dir_y;
+        // });
+        draw_rect(300, 600, 100, 100, (light, obj) => {
+            let ref_x = light.tmp_x - light.dir_x;
+            let ref_y = light.tmp_y - light.dir_y;
+
+            if(!(ref_x >= obj.x) || !(ref_x <= obj.x + obj.w)) light.dir_x = -light.dir_x;
+            if(!(ref_y >= obj.y) || !(ref_y <= obj.y + obj.h)) light.dir_y = -light.dir_y;
+        });
+
+        let i = 0;
+        let draw = function() {
+            draw_background(0,0,0);
+            emit_light(mousex, mousey, 128, 255, 255, 1, 0);
+            // emit_light(700, 100, 0, 0, 255, 1, 0);
+            // clear_objects();
+            canvas_2d_draw(ctx);
+            canvas_2d_draw_fps(ctx);
+            // i+=rad/3000;
+            requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+    </script>
+</body>
+
+</html>
